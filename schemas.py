@@ -1,48 +1,38 @@
-"""
-Database Schemas
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List, Literal
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
-"""
-
-from pydantic import BaseModel, Field
-from typing import Optional
-
-# Example schemas (replace with your own):
-
+# Core domain schemas
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    name: str = Field(..., min_length=2, max_length=80)
+    email: EmailStr
+    hashed_password: str
+    role: Literal['user','admin'] = 'user'
+    avatar_url: Optional[str] = None
+    is_active: bool = True
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Service(BaseModel):
+    title: str = Field(..., min_length=2, max_length=100)
+    description: str = Field(..., min_length=10, max_length=1000)
+    price: float = Field(..., ge=0)
+    category: Optional[str] = None
+    is_active: bool = True
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Order(BaseModel):
+    user_id: str
+    service_id: str
+    status: Literal['pending','confirmed','in_progress','completed','cancelled'] = 'pending'
+    notes: Optional[str] = None
+    total: float = Field(..., ge=0)
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Event(BaseModel):
+    user_id: Optional[str] = None
+    event_type: Literal['view','click','order','login','logout','chat','pageview']
+    metadata: dict = {}
+    path: Optional[str] = None
+
+class Project(BaseModel):
+    name: str
+    client: Optional[str] = None
+    description: Optional[str] = None
+    tags: List[str] = []
+    cover_url: Optional[str] = None
